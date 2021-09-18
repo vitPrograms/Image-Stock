@@ -16,11 +16,11 @@ class ImageController {
         if(!srcArray){
             res.status(404).send('No send files')
         }
-
         srcArray.forEach(async file => {
-            const newImage = await db.query('INSERT INTO image (lastModified, name, size, type, base64src) values ($1,$2,$3,$4,$5) RETURNING *', 
-            [file.lastModified, file.name, file.size, file.type, file.base64src])
+            const newImage = await db.query('INSERT INTO image (lastModified, name, size, type, base64) values ($1,$2,$3,$4,$5) RETURNING *', 
+            [file.lastModified, file.name, file.size, file.type, file.base64])
         })
+        console.log('Saved', srcArray.length)
         res.status(200).send('Ok')
     }
 }

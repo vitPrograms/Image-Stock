@@ -1,89 +1,165 @@
-export function imagePlugin(selector, options = {}) {
-    const input = document.querySelector(selector)
-    const preview = document.createElement('div')
-    const open = document.querySelector('.add-button')
-    let sendButton
-    preview.classList.add('add-preview')
-
+export function uploadFiles(selector, options) {
+    let input = document.querySelector(selector)
+    const addImageContainer = document.querySelector('.add-image')
+    const open = addImageContainer.querySelector('.add-button')
+    const send = addImageContainer.querySelector('.send-btn')
+    let preview = createPreview()
     let files = []
-    const uploadFiles = []
 
-    if(options.multi)
-        input.setAttribute('multiple', true)
-
-    if(options.accept && Array.isArray(options.accept)) {
-        input.setAttribute('accept', options.accept.join(','))
-    }
-    
+    input = loadInputOptions(input, options)
     input.insertAdjacentElement('afterend', preview)
 
     open.addEventListener('click', () => input.click())
-    input.addEventListener('change', filesHandler)
 
-    function filesHandler(event) {
-        preview.textContent = ''
-        const uploadFiles = []
-        files = Array.from(event.target.files)
+    input.addEventListener('change', (event) => {
+        files = filesHandler(Array.from(event.target.files))
+        hideButton(files)
+    })
 
+    preview.addEventListener('click', event => {
+        imageInteractive(event)
+        hideButton(files)
+    })
+
+    send.addEventListener('click', event => {
+        sendImageHandler(event)
+    })
+
+    function hideButton(files) {
+        send.hidden = files.length === 0 ? true : false
+    }
+
+    function filesHandler(files) {
+        preview.innerHTML = ''
         files.forEach(file => {
             const reader = new FileReader()
             reader.onload = event => {
-                preview.insertAdjacentHTML('afterbegin', 
-                `<div class="add-preview-card">
-                    <img src="${event.target.result}" class="preview-image"/>
-                </div>`
-                )
-                const fileObj = {
-                    lastModified: file.lastModified,
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    base64src: event.target.result
-                }
-                uploadFiles.push(fileObj)
+                preview.insertAdjacentHTML('beforeend', 
+                `<div class="add-preview-card" >
+                    <button class="delete-button" data-remove="${file.name}">&#x2716</button>
+                    <span class="image-info" title="${file.name}">${file.name}</span>
+                    <img src="${event.target.result}" class="preview-image" data-open="${file.name}"/>
+                </div>`)
+                file.base64 = event.target.result
             }
             reader.readAsDataURL(file)
+        })
+        return files
+    }
+
+    function imageInteractive(event) {
+        const dataset = event.target.dataset
+
+        if(dataset.remove) {
+            const name = dataset.remove
+            const result = files.filter(file => file.name !== name)
+            const block = preview.querySelector(`[data-remove="${name}"]`).closest('.add-preview-card')
+            block.remove()
+
+            files = result
+        }else if(dataset.open) {
+            const name = event.target.dataset.open
+            const file = files.find(file => file.name === name)
             
-        })
+            const modular = document.createElement('div')
+            modular.classList.add('modular-window')
+            modular.innerHTML = `<img src="${file.base64}" class="download" data-download="${file.name}" title="${file.name}"/>`
 
-        if(files){
-            sendButton = document.querySelector('.send-btn')
-            sendButton.addEventListener('click', () => sendImage())
-        }
+            preview.append(modular)
+        }else if(event.target.className === 'modular-window') {
+            const block = preview.querySelector('.modular-window')
+            block.remove()
+        }else if(event.target.className === 'download') {
+            const linkSource = event.target.src
+            var link = document.createElement('a')
+            link.setAttribute('href',linkSource)
+            link.setAttribute('download', dataset.download)
+            onload=link.click()
 
-        function sendImage(){
-            console.log(uploadFiles)
-            fetch('http://localhost:8080/api/add', {
-                method:'POST',
-                headers: {
-                    'Content-Type':'application/json'
-                },
-                body: JSON.stringify(uploadFiles)
-            })
-            .then((stat) => {
-                console.log(stat)
-                document.location.href = document.location
-            })
         }
     }
 
+    function sendImageHandler(event) {
+        let data = []
+        let size = 0
+        files.forEach(file => {
+            const imageData = {}
+            imageData.lastModified = file.lastModified
+            imageData.name = file.name
+            imageData.type = file.type
+            imageData.size = file.size
+            imageData.base64 = file.base64
 
+            data.push(imageData)
+            size += file.size
+        })
+        console.log(bytesToSize(size))
+        console.log(data)
+    
+        files = []
+        hideButton(files)
+        preview.innerHTML = ''
 
+        const loading = document.createElement('div')
+        loading.classList.add('loading')
+        loading.innerHTML = '<div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>'
 
+        addImageContainer.insertAdjacentElement('beforeend', loading)
 
-    const loadPreview = document.querySelector('.image-list')
+        fetch('http://localhost:8080/api/add', {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            console.log(response)
+            let block
+            if(response.ok){
+                block = messageBlock(`Успішно надіслано ${data.length} зображень`)
+            }else if(response.status === 413){
+                block = messageBlock(`Файл занадто великий [${bytesToSize(size)}] | Макс. 40Мб`, '#F47174')
+            }else{
+                block = messageBlock('Щось пішло не так!', '#F47174')
+            }
+            preview.insertAdjacentElement('beforeend', block)
+            setTimeout(() => {
+                block.remove()
+            }, 4000)
 
-    fetch('http://localhost:8080/api/images')
-    .then(response => response.json())
-    .then(data => {
-        //console.log(data)
-        addCards(data)
-    })
-
-    function addCards(data){
-        data.forEach(dFile => {
-            console.log(dFile)
-            loadPreview.innerHTML += (`<div class="add-preview-card"><img src="${dFile.base64src}" class="preview-image"/></div>`)
+            loading.remove()
         })
     }
+}
+
+
+function loadInputOptions(input, options) {
+    input.setAttribute('multiple', options.multi)
+    input.setAttribute('accept', options.accept.join(','))
+
+    return input
+}
+
+function createPreview() {
+    const preview = document.createElement('div')
+    preview.classList.add('preview-container')
+
+    return preview
+}
+
+function messageBlock(text, color = '#257A3E') {
+    const block = document.createElement('div')
+    block.classList.add('message-block')
+    block.textContent = text
+    block.style.color = color
+
+    return block
+}
+
+function bytesToSize(bytes) {
+    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    if (bytes == 0) return '0 Byte';
+    var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
 }

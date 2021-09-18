@@ -1,6 +1,6 @@
-import {imagePlugin} from './upload.js'
+import {uploadFiles} from './upload.js'
 
-imagePlugin('#image-select', {
+uploadFiles('#image-select', {
     multi: true,
-    accept: ['image/*']
+    accept: ['.jpeg', '.jpg', '.png', '.gif']
 })
