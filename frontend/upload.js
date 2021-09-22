@@ -34,10 +34,12 @@ export function uploadFiles(selector, options) {
         files.forEach(file => {
             const reader = new FileReader()
             reader.onload = event => {
+                const size = bytesToSize(file.size)
                 preview.insertAdjacentHTML('beforeend', 
                 `<div class="add-preview-card" >
                     <button class="delete-button" data-remove="${file.name}">&#x2716</button>
                     <span class="image-info" title="${file.name}">${file.name}</span>
+                    <span class="image-size" title="${size}">${size}</span>
                     <img src="${event.target.result}" class="preview-image" data-open="${file.name}"/>
                 </div>`)
                 file.base64 = event.target.result
@@ -81,7 +83,7 @@ export function uploadFiles(selector, options) {
 
     function sendImageHandler(event) {
         let data = []
-        let size = 0
+        let size = 0, block
         files.forEach(file => {
             const imageData = {}
             imageData.lastModified = file.lastModified
@@ -93,8 +95,6 @@ export function uploadFiles(selector, options) {
             data.push(imageData)
             size += file.size
         })
-        console.log(bytesToSize(size))
-        console.log(data)
     
         files = []
         hideButton(files)
@@ -115,7 +115,6 @@ export function uploadFiles(selector, options) {
         })
         .then(response => {
             console.log(response)
-            let block
             if(response.ok){
                 block = messageBlock(`Успішно надіслано ${data.length} зображень`)
             }else if(response.status === 413){
@@ -123,6 +122,15 @@ export function uploadFiles(selector, options) {
             }else{
                 block = messageBlock('Щось пішло не так!', '#F47174')
             }
+            preview.insertAdjacentElement('beforeend', block)
+            setTimeout(() => {
+                block.remove()
+            }, 4000)
+
+            loading.remove()
+        })
+        .catch(() => {
+            block = messageBlock('Щось пішло не так!', '#F47174')
             preview.insertAdjacentElement('beforeend', block)
             setTimeout(() => {
                 block.remove()

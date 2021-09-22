@@ -64,21 +64,46 @@ body {
     image-rendering: optimizeSpeed;
 }
 
-.delete-button {
+.delete-button, .image-info, .image-size{
     display: flex;
     position: absolute;
     background-color: rgba(0,0,0,.5);
     outline: none;
     border: none;
-    width: 20px;
-    height: 20px;
     text-align: center;
     align-items: center;
     color: white;
+    opacity: 0;
+}
+
+.delete-button {
+    width: 20px;
+    height: 20px;
     padding: 5px;
     right: 0;
     top: 0;
-    opacity: 0;
+}
+
+.image-info {
+    background-color: rgba(0,0,0,.8);
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 0 2px;
+    font-size: small;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    transform: translateY(50px);
+}
+
+.image-size {
+    top: 0;
+    left: 0;
+    padding: 3px;
+}
+
+.add-preview-card:hover {
+    box-shadow: 0 0 10px 2px rgba(0,0,0,.5);
 }
 
 .add-preview-card:hover .delete-button{
@@ -92,27 +117,14 @@ body {
     transition: .2s ease-in;
 }
 
+.add-preview-card:hover .image-size {
+    opacity: 1;
+    transition: .2s ease-in;
+}
+
 .delete-button:hover {
     background: rgba(134, 78, 78, 1);
     transition: .3s ease;
-}
-
-.image-info {
-    display: flex;
-    position: absolute;
-    text-align: center;
-    min-height: fit-content;
-    background-color: rgba(0,0,0,.8);
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding: 0 2px;
-    color: white;
-    font-size: small;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(50px);
 }
 
 .modular-window {
@@ -220,4 +232,3 @@ body {
     0% {transform: translate(0, 0);}
     100% {transform: translate(24px, 0);}
 }
-  
