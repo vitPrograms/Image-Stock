@@ -1,0 +1,26 @@
+{
+  "name": "image-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "parcel frontend/index.html",
+    "server": "nodemon backend/server.js",
+    "dev": "concurrently \"npm run server\" \"npm run serve\"",
+    "build": "concurently \"parcel frontend/index.html\" \"nodemon backend/server.js\""
+  },
+  "author": "Belei Vitalii",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^6.2.1",
+    "parcel-bundler": "^1.12.5"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "node": "^16.6.1",
+    "nodemon": "^2.0.12",
+    "pg": "^8.7.1"
+  }
+}
